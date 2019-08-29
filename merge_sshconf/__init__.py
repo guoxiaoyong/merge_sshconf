@@ -1,0 +1,80 @@
+# Copyright (c) 2018 Xiaoyong Guo
+
+import json
+import os
+import sys
+import pathlib
+import sshconf
+import glob
+
+
+def get_all_files(root, pattern):
+  root = pathlib.Path(os.path.expanduser(root))
+  return root.rglob(pattern)
+
+
+def format_config(config):
+  config = json.loads(config)
+  res = []
+  try:
+    res.append('Host %s\n' % config.pop('Host'))
+  except KeyError:
+    print(config)
+    raise
+  for key, value in config.items():
+    if key.lower() == 'identityfile' and value[0] != '~':
+      value = os.path.join(ROOT_PATH, value)
+      res.append('  %s %s\n' % (key, value))
+    else:
+      res.append('  %s %s\n' % (key, value))
+  res.append('\n')
+  return res
+
+
+def format_proxy_config(config):
+  config = json.loads(config)
+  host = config.pop('Host')
+  except_host = 'coin-control-01.ap-southeast-1'
+  tmpl = '  ProxyCommand ssh ec2-user@coin-control-01.ap-southeast-1 nc %s %s\n'
+  res = []
+  try:
+    res.append('Host %s\n' % host)
+  except KeyError:
+    print(config)
+    raise
+  for key, value in config.items():
+    if key.lower() == 'identityfile' and value[0] != '~':
+      value = os.path.join(ROOT_PATH, value)
+      res.append('  %s %s\n' % (key, value))
+    else:
+      res.append('  %s %s\n' % (key, value))
+
+  if host != except_host:
+    hn = config.get('Hostname') or config.get('HostName')
+    res.append(tmpl % (hn, 22))
+  res.append('\n')
+  return res
+
+
+def main():
+  config_file = pathlib.Path.home().join('.ssh/merge_sshconfig')
+  config = json.loads(config_file.read_text())
+
+  ssh_config_list = []
+  for root, each_config in config.items():
+    for sshconf_file in get_all_files(root, each_config['pattern']):
+      with sshconf_file.open() as infile:
+        ssh_config = SshConfig(infile.readlines())
+        ssh_config_list.append(ssh_config)
+
+
+  res = []
+  for config in configs:
+    res.extend(formatter(config))
+
+  with open('config', 'w') as config_file:
+    config_file.writelines(res)
+
+
+if __name__ == '__main__':
+  main()
