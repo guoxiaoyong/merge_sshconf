@@ -57,7 +57,7 @@ def format_proxy_config(config):
 
 
 def main():
-  config_file = pathlib.Path.expanduser('~/.ssh/merge_sshconfig.json')
+  config_file = pathlib.Path.expanduser('~/.ssh/merge_config.json')
   if not config_file.is_file():
     print(f'{config_file} does not exist!')
     return
