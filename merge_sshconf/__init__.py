@@ -10,7 +10,7 @@ import glob
 
 def get_all_files(root, pattern):
   root = pathlib.Path(os.path.expanduser(root))
-  return root.rglob(pattern)
+  return [path for path in root.rglob(pattern) if path.is_file()]
 
 
 def format_config(config):
@@ -57,23 +57,38 @@ def format_proxy_config(config):
 
 
 def main():
-  config_file = pathlib.Path.home().join('.ssh/merge_sshconfig')
-  config = json.loads(config_file.read_text())
+  config_file = pathlib.Path.expanduser('~/.ssh/merge_sshconfig.json')
+  if not config_file.is_file():
+    print(f'{config_file} does not exist!')
+    return
 
-  ssh_config_list = []
+  new_ssh_config = sshconf.empty_ssh_config()
+  default_ssh_config = pathlib.Path.expanduser('~/.ssh/default_sshconfig')
+  if not default_ssh_config.is_file():
+    print(f'{default_ssh_config} does not exist!')
+  else:
+    with default_ssh_config.open() as infile:
+      ssh_config = SshConfig(infile.readlines())
+      for host in ssh_config.hosts():
+        host_config = ssh_config.host(host)
+        host_config = update_host_config_path(host_config, root)
+        new_ssh_config.add(host, **host_config)
+
+  config = json.loads(config_file.read_text())
   for root, each_config in config.items():
-    for sshconf_file in get_all_files(root, each_config['pattern']):
+    if isinstance(each_config, dict):
+      pattern = each_config
+    else:
+      pattern = each_config['pattern']
+
+    for sshconf_file in get_all_files(root, pattern):
       with sshconf_file.open() as infile:
         ssh_config = SshConfig(infile.readlines())
-        ssh_config_list.append(ssh_config)
-
-
-  res = []
-  for config in configs:
-    res.extend(formatter(config))
-
-  with open('config', 'w') as config_file:
-    config_file.writelines(res)
+        for host in ssh_config.hosts():
+          host_config = ssh_config.host(host)
+          host_config = update_host_config_path(host_config, root)
+          new_ssh_config.add(host, **host_config)
+  print(new_ssh_config.config())
 
 
 if __name__ == '__main__':

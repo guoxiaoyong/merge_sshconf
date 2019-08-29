@@ -1,0 +1,35 @@
+Host github.com
+  User git
+  HostName github.com
+  IdentityFile ~/.ssh/xguo_pikachu15/id_rsa
+
+Host book
+  User xguo
+  HostName 127.0.0.1
+  ServerAliveInterval 10
+  Port 65000
+  ProxyCommand ssh ec2-user@strategy-02.us-east-2 nc %h %p
+
+Host hive-21
+  User xguo
+  HostName 10.21.1.21
+  ServerAliveInterval 30
+  Port 22
+
+Host hive-29
+  User xguo
+  HostName 10.21.1.29
+  ServerAliveInterval 30
+  Port 22
+
+Host hive-31
+  User xguo
+  HostName 10.21.1.31
+  ServerAliveInterval 30
+  Port 22
+
+Host slurm
+  Hostname 10.21.131.201
+  User xguo
+  ServerAliveInterval 10
+  IdentityFile ~/.ssh/xguo_pikachu15/id_rsa
