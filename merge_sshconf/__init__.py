@@ -7,19 +7,43 @@ import pathlib
 import sshconf
 
 
+def to_list(value):
+    if not isinstance(value, (list, tuple)):
+        return [value]
+    else:
+        return value
+
+
 def get_all_files(root, pattern):
     root = pathlib.Path(root).expanduser()
     return [path for path in root.rglob(pattern) if path.is_file()]
+
+
+def process_identity_file(value, root):
+    value = [os.path.join(root, val) for val in to_list(value)]
+    for val in value:
+        if not os.path.isfile(val):
+            logging.warning('Identity file does not exist: %s' % value)
+    return value
+
+
+def process_proxy_command(value, root):
+    token_list = value.split()
+    for idx, token in enumerate(token_list.copy()):
+        if token == '-i':
+            id_file = token_list[idx+1]
+            token_list[idx+1] = os.path.join(root, id_file)
+    return ' '.join(token_list)
 
 
 def update_host_config_path(host_config, root=None):
     root = os.path.expanduser(root or '')
     new_host_config = {}
     for key, value in host_config.items():
-        if key.lower() == 'identityfile' and value[0] not in ('~', '/'):
-            value = os.path.join(root, value)
-            if not os.path.isfile(value):
-                logging.warning('Identity file does not exist: %s' % value)
+        if key.lower() == 'identityfile':
+            value = process_identity_file(value, root)
+        elif key.lower() == 'proxycommand':
+            value = process_proxy_command(value, root)
         new_host_config[key] = value
     return new_host_config
 
