@@ -43,14 +43,16 @@ DEFAULT_SSH_CONFIG = '~/.ssh/default_sshconfig'
 def main():
     config_str = load_text(DEFAULT_PROGRAM_CONFIG)
     if not config_str:
-        logging.error('%s does not exist!', DEFAULT_PROGRAM_CONFIG)
+        logging.error(
+            'Program config file %s does not exist!', DEFAULT_PROGRAM_CONFIG)
         return
 
     config = json.loads(config_str)
     new_ssh_config = sshconf.empty_ssh_config()
     default_ssh_config = load_text(DEFAULT_SSH_CONFIG, readlines=True)
     if not default_ssh_config:
-        logging.warning(f'{default_ssh_config} does not exist!')
+        logging.warning(
+            f'Default ssh config {DEFAULT_SSH_CONFIG} does not exist!')
 
     ssh_config = sshconf.SshConfig(default_ssh_config)
     for host in ssh_config.hosts():
@@ -69,7 +71,11 @@ def main():
         for sshconf_file in get_all_files(root, pattern):
             with sshconf_file.open() as infile:
                 ssh_config = sshconf.SshConfig(infile.readlines())
+
             for host in ssh_config.hosts():
+                if host in new_ssh_config.hosts():
+                  continue
+
                 host_config = ssh_config.host(host)
                 host_config = update_host_config_path(host_config, root)
                 new_ssh_config.add(host, **host_config)

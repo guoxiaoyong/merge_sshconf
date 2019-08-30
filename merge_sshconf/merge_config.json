@@ -1,3 +1,4 @@
 {
-   "~/workspace/coin_deploy": "**/ssh_config"
+   "~/workspace/coin_deploy": "*/ssh_config",
+   "~/workspace/navi_deploy": "ssh_config/config"
 }
