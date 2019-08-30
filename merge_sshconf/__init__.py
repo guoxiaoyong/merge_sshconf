@@ -13,10 +13,7 @@ def get_all_files(root, pattern):
 
 
 def update_host_config_path(host_config, root=None):
-    if not root:
-        return host_config
-
-    root = os.path.expanduser(root)
+    root = os.path.expanduser(root or '')
     new_host_config = {}
     for key, value in host_config.items():
         if key.lower() == 'identityfile' and value[0] not in ('~', '/'):
@@ -30,12 +27,12 @@ def update_host_config_path(host_config, root=None):
 def load_text(path, readlines=False):
     text_file = pathlib.Path(path).expanduser().absolute()
     if not text_file.is_file():
-        content = None
+        content = [] if readlines else ''
     elif readlines:
         with text_file.open() as infile:
             content = infile.readlines()
     else:
-        content = text_file.read()
+        content = text_file.read_text()
     return content
 
 
@@ -54,12 +51,12 @@ def main():
     default_ssh_config = load_text(DEFAULT_SSH_CONFIG, readlines=True)
     if not default_ssh_config:
         logging.warning(f'{default_ssh_config} does not exist!')
-    else:
-        ssh_config = sshconf.SshConfig(default_ssh_config)
-        for host in ssh_config.hosts():
-            host_config = ssh_config.host(host)
-            host_config = update_host_config_path(host_config, root=None)
-            new_ssh_config.add(host, **host_config)
+
+    ssh_config = sshconf.SshConfig(default_ssh_config)
+    for host in ssh_config.hosts():
+        host_config = ssh_config.host(host)
+        host_config = update_host_config_path(host_config, root=None)
+        new_ssh_config.add(host, **host_config)
 
     for root, each_config in config.items():
         if isinstance(each_config, dict):
